@@ -14,10 +14,20 @@
         th, td { border: 1px solid #444; padding: 12px; text-align: left; }
         td.valor { font-weight: bold; font-size: 1.1em; color: #3498db; }
         button { width: 100%; padding: 12px; font-size: 1em; font-weight: bold; border-radius: 4px; border: 1px solid; cursor: pointer; margin-top: 10px; }
+        .btn-submit, #btn-add-inventory { background-color: #27ae60; color: #FFFFFF; border-color: #27ae60; }
+        #btn-view-inventory { background-color: #2980b9; color: #FFFFFF; border-color: #2980b9; }
         #btn-logout { background-color: #e74c3c; color: #FFFFFF; border-color: #e74c3c; }
-        #tela-principal { display: none; } /* Começa escondido */
+        #tela-principal { display: none; }
         #tela-login { text-align: center; }
         .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 9999; color: white; font-size: 1.5em; }
+        dialog { max-width: 800px; border: 1px solid #555; border-radius: 8px; background-color: #1e1e1e; color: #e0e0e0; padding: 0; }
+        dialog::backdrop { background-color: rgba(0, 0, 0, 0.7); }
+        .modal-header { padding: 15px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 25px; max-height: 70vh; overflow-y: auto; }
+        .btn-close { background: none; border: none; font-size: 1.5rem; color: #aaa; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #555; border-radius: 4px; background-color: #333; color: #fff; }
     </style>
 </head>
 <body>
@@ -35,7 +45,7 @@
 
         <div id="tela-principal">
             <h1>Painel de Controle</h1>
-            <p>Logado como: <span id="user-email"></span></p>
+            <p style="text-align: center;">Logado como: <strong id="user-email"></strong></p>
             <table>
                 <thead><tr><th>Sócio</th><th>Valor Investido</th></tr></thead>
                 <tbody>
@@ -44,23 +54,27 @@
                     <tr><td>Kenedy</td><td id="total-kenedy" class="valor">R$ 0,00</td></tr>
                 </tbody>
             </table>
+            <button id="btn-add-inventory">Adicionar Item ao Inventário</button>
+            <button id="btn-view-inventory">Visualizar Inventário Detalhado</button>
             <button id="btn-logout">Sair (Logout)</button>
         </div>
     </div>
     
     <div id="loading-overlay" class="loading-overlay">Carregando...</div>
 
+    <dialog id="modal-add-inventory"><div class="modal-header"><h2>Adicionar Item</h2><button class="btn-close">&times;</button></div><div class="modal-body"><form id="form-add-inventory"></form></div></dialog>
+    <dialog id="modal-view-inventory"><div class="modal-header"><h2>Inventário Detalhado</h2><button class="btn-close">&times;</button></div><div class="modal-body" id="inventory-body"></div></dialog>
+
     <script>
         // --- CONFIGURAÇÃO ---
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrKN7Tr_cu5X-dzKzKfgdeuYxg9kLerQMN50r_bbj0b6SVayDBd2uxX2MW7N2-epGqeg/exec";
-        let id_token = null; // Guardará o token de login do usuário
+        let id_token = null;
 
         // --- LÓGICA DE LOGIN ---
         function handleCredentialResponse(response) {
             id_token = response.credential;
-            const userPayload = JSON.parse(atob(id_token.split('.')[1])); // Decodifica o token para pegar o e-mail
+            const userPayload = JSON.parse(atob(id_token.split('.')[1]));
             document.getElementById('user-email').textContent = userPayload.email;
-            
             document.getElementById('tela-login').style.display = 'none';
             showLoading('Autenticando e carregando dados...');
             inicializarAplicacao();
@@ -68,8 +82,9 @@
 
         function logout() {
             id_token = null;
-            google.accounts.id.disableAutoSelect(); // Impede o login automático na próxima vez
+            google.accounts.id.disableAutoSelect();
             document.getElementById('tela-principal').style.display = 'none';
+            document.querySelectorAll('dialog').forEach(d => d.close()); // Fecha todos os modais abertos
             document.getElementById('tela-login').style.display = 'block';
         }
 
@@ -84,18 +99,15 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'getInventario', id_token: id_token })
                 });
-                
                 const result = await response.json();
                 if (result.status === 'error') { throw new Error(result.message); }
-                
                 investimentos = result;
                 atualizarTela();
             } catch (e) {
                 alert("Erro ao carregar dados: " + e.message);
-                logout(); // Desloga se houver erro de permissão
+                logout();
             }
         }
         
@@ -110,12 +122,65 @@
             document.getElementById('total-kenedy').textContent = formatarMoeda(totais.kenedy);
         }
 
+        // --- FUNÇÕES DE INTERAÇÃO (OS "MÓVEIS") ---
+        function abrirFormularioAdicionar() {
+            const form = document.getElementById('form-add-inventory');
+            form.innerHTML = '<div class="form-group"><label>Sócio:</label><select id="inv-socio"><option value="Luciano">Luciano</option><option value="Marcio">Márcio</option><option value="Kenedy">Kenedy</option></select></div><div class="form-group"><label>Descrição:</label><input id="inv-desc" type="text" required></div><div class="form-group"><label>Valor (R$):</label><input id="inv-valor" type="number" step="0.01" required></div><button type="submit" class="btn-submit">Salvar</button>';
+            document.getElementById('modal-add-inventory').showModal();
+        }
+
+        async function handleInventoryFormSubmit(e) {
+            e.preventDefault();
+            const data = {
+                Data: new Date().toLocaleDateString("pt-BR"),
+                Socio: document.getElementById('inv-socio').value,
+                Descricao: document.getElementById('inv-desc').value,
+                Valor: parseFloat(document.getElementById('inv-valor').value)
+            };
+            if (!data.Descricao || !data.Valor || data.Valor <= 0) { alert("Preencha todos os campos."); return; }
+            
+            showLoading('Salvando...');
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'addInventario', id_token: id_token, data: data })
+                });
+                await carregarDados(); // Recarrega os dados após salvar
+                document.getElementById('modal-add-inventory').close();
+            } catch (e) {
+                alert("Erro ao salvar: " + e.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function abrirVisualizacaoInventario() {
+            const body = document.getElementById('inventory-body');
+            body.innerHTML = '';
+            const porSocio = {};
+            investimentos.forEach(i => { (porSocio[i.Socio] = porSocio[i.Socio] || []).push(i); });
+            for (const socio in porSocio) {
+                if (porSocio[socio].length > 0) {
+                    let html = `<h3>${socio}</h3><table>`;
+                    porSocio[socio].forEach(item => { html += `<tr><td>${item.Descricao}</td><td>${formatarMoeda(item.Valor)}</td></tr>`; });
+                    body.innerHTML += html + '</table>';
+                }
+            }
+            document.getElementById('modal-view-inventory').showModal();
+        }
+
+        // --- INICIALIZAÇÃO E ATIVAÇÃO DOS BOTÕES ---
         async function inicializarAplicacao() {
             await carregarDados();
             hideLoading();
             document.getElementById('tela-principal').style.display = 'block';
+            
+            // Ativando todos os botões
             document.getElementById('btn-logout').addEventListener('click', logout);
-            // Os outros botões serão ativados aqui...
+            document.getElementById('btn-add-inventory').addEventListener('click', abrirFormularioAdicionar);
+            document.getElementById('btn-view-inventory').addEventListener('click', abrirVisualizacaoInventario);
+            document.getElementById('form-add-inventory').addEventListener('submit', handleInventoryFormSubmit);
+            document.querySelectorAll('.btn-close').forEach(btn => btn.addEventListener('click', () => btn.closest('dialog').close()));
         }
     </script>
 </body>
