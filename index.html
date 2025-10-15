@@ -20,6 +20,8 @@
         .btn-submit:hover, #btn-add-inventory:hover { background-color: #2ecc71; border-color: #2ecc71; }
         #btn-view-inventory { background-color: #d39c43; color: #FFFFFF; border-color: #d39c43; }
         #btn-view-inventory:hover { background-color: #e6b976; border-color: #e6b976; }
+        #btn-view-recipes { background-color: #8e44ad; color: #FFFFFF; border-color: #8e44ad; }
+        #btn-view-recipes:hover { background-color: #9b59b6; border-color: #9b59b6; }
         #btn-logout { background-color: #c0392b; color: #FFFFFF; border-color: #c0392b; }
         #btn-logout:hover { background-color: #e74c3c; border-color: #e74c3c; }
         #tela-principal { display: none; }
@@ -38,9 +40,7 @@
 <body>
     <div class="container">
         <div id="tela-login">
-            <div class="logo-container">
-                <img id="logo-login" src="" alt="Logo da PrimÓrdios Cervejaria"> 
-            </div>
+            <div class="logo-container"><img id="logo-login" src="" alt="Logo"></div>
             <h1>PrimÓrdios Cervejaria</h1>
             <p>Por favor, faça login para acessar o sistema.</p>
             <div id="g_id_onload"
@@ -52,9 +52,7 @@
         </div>
 
         <div id="tela-principal">
-            <div class="logo-container">
-                <img id="logo-principal" src="" alt="Logo da PrimÓrdios Cervejaria">
-            </div>
+            <div class="logo-container"><img id="logo-principal" src="" alt="Logo"></div>
             <h1>Painel de Controle</h1>
             <p style="text-align: center;">Logado como: <strong id="user-email"></strong></p>
             <table>
@@ -67,6 +65,7 @@
             </table>
             <button id="btn-add-inventory">Adicionar Item ao Inventário</button>
             <button id="btn-view-inventory">Visualizar Inventário Detalhado</button>
+            <button id="btn-view-recipes">Nossas Receitas</button>
             <button id="btn-logout">Sair (Logout)</button>
         </div>
     </div>
@@ -75,6 +74,7 @@
 
     <dialog id="modal-add-inventory"><div class="modal-header"><h2>Adicionar Item</h2><button class="btn-close">&times;</button></div><div class="modal-body"><form id="form-add-inventory"></form></div></dialog>
     <dialog id="modal-view-inventory"><div class="modal-header"><h2>Inventário Detalhado</h2><button class="btn-close">&times;</button></div><div class="modal-body" id="inventory-body"></div></dialog>
+    <dialog id="modal-view-recipes"><div class="modal-header"><h2>Nossas Receitas</h2><button class="btn-close">&times;</button></div><div class="modal-body" id="recipes-body"></div></dialog>
 
     <script>
         // --- CONFIGURAÇÃO ---
@@ -82,22 +82,123 @@
         const LOGO_URL = "https://github.com/CervejariaPrimOrdioS/cervejaria-sistema/blob/main/logo.jpeg?raw=true";
         let id_token = null;
 
-        // --- LÓGICA DE LOGIN (CORRIGIDA E ROBUSTA) ---
+        // --- LÓGICA DE LOGIN ---
         function handleCredentialResponse(response) {
             id_token = response.credential;
             const userPayload = JSON.parse(atob(id_token.split('.')[1]));
             document.getElementById('user-email').textContent = userPayload.email;
-            
             document.getElementById('tela-login').style.display = 'none';
             showLoading('Autenticando e carregando dados...');
-            
             inicializarAplicacao();
         }
 
-        // --- Resto do JavaScript (sem alterações na lógica principal) ---
-        function logout(){id_token=null;google.accounts.id.disableAutoSelect();document.getElementById("tela-principal").style.display="none";document.querySelectorAll("dialog").forEach(d=>d.close());document.getElementById("tela-login").style.display="block"}let investimentos=[];function formatarMoeda(e){return(e||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}function showLoading(e){document.getElementById("loading-overlay").textContent=e,document.getElementById("loading-overlay").style.display="flex"}function hideLoading(){document.getElementById("loading-overlay").style.display="none"}async function carregarDados(){if(!id_token)return void alert("Não autenticado!");try{const e=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({action:"getInventario",id_token:id_token})}),o=await e.json();if("error"===o.status)throw new Error(o.message);investimentos=o,atualizarTela()}catch(e){alert("Erro ao carregar dados: "+e.message),logout()}}function atualizarTela(){const e={luciano:0,marcio:0,kenedy:0};(investimentos||[]).forEach(o=>{const t=o.Socio?o.Socio.toLowerCase():"";void 0!==e[t]&&(e[t]+=parseFloat(o.Valor)||0)}),document.getElementById("total-luciano").textContent=formatarMoeda(e.luciano),document.getElementById("total-marcio").textContent=formatarMoeda(e.marcio),document.getElementById("total-kenedy").textContent=formatarMoeda(e.kenedy)}function abrirFormularioAdicionar(){const e=document.getElementById("form-add-inventory");e.innerHTML='<div class="form-group"><label>Sócio:</label><select id="inv-socio"><option value="Luciano">Luciano</option><option value="Marcio">Márcio</option><option value="Kenedy">Kenedy</option></select></div><div class="form-group"><label>Descrição:</label><input id="inv-desc" type="text" required></div><div class="form-group"><label>Valor (R$):</label><input id="inv-valor" type="number" step="0.01" required></div><button type="submit" class="btn-submit">Salvar</button>',document.getElementById("modal-add-inventory").showModal()}async function handleInventoryFormSubmit(e){e.preventDefault();const o={Data:(new Date).toLocaleDateString("pt-BR"),Socio:document.getElementById("inv-socio").value,Descricao:document.getElementById("inv-desc").value,Valor:parseFloat(document.getElementById("inv-valor").value)};if(o.Descricao&&o.Valor&&o.Valor>0){showLoading("Salvando...");try{await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({action:"addInventario",id_token:id_token,data:o})}),await carregarDados(),document.getElementById("modal-add-inventory").close()}catch(e){alert("Erro ao salvar: "+e.message)}finally{hideLoading()}}else alert("Preencha todos os campos.")}function abrirVisualizacaoInventario(){const e=document.getElementById("inventory-body");e.innerHTML="";const o={};investimentos.forEach(t=>{(o[t.Socio]=o[t.Socio]||[]).push(t)});for(const t in o)if(o[t].length>0){let n=`<h3>${t}</h3><table>`;o[t].forEach(e=>{n+=`<tr><td>${e.Descricao}</td><td>${formatarMoeda(e.Valor)}</td></tr>`}),e.innerHTML+=n+"</table>"}}async function inicializarAplicacao(){await carregarDados(),hideLoading(),document.getElementById("tela-principal").style.display="block",document.getElementById("btn-logout").addEventListener("click",logout),document.getElementById("btn-add-inventory").addEventListener("click",abrirFormularioAdicionar),document.getElementById("btn-view-inventory").addEventListener("click",abrirVisualizacaoInventario),document.getElementById("form-add-inventory").addEventListener("submit",handleInventoryFormSubmit),document.querySelectorAll(".btn-close").forEach(e=>e.addEventListener("click",()=>e.closest("dialog").close()))}
+        function logout() {
+            id_token = null;
+            google.accounts.id.disableAutoSelect();
+            document.getElementById('tela-principal').style.display = 'none';
+            document.querySelectorAll('dialog').forEach(d => d.close());
+            document.getElementById('tela-login').style.display = 'block';
+        }
 
-        // --- INICIALIZAÇÃO VISUAL (SEPARADA E SEGURA) ---
+        // --- LÓGICA DO APP ---
+        let investimentos = [];
+        function formatarMoeda(valor) { return (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function showLoading(msg) { document.getElementById('loading-overlay').textContent = msg; document.getElementById('loading-overlay').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loading-overlay').style.display = 'none'; }
+
+        async function carregarDados() {
+            if (!id_token) { alert("Não autenticado!"); return; }
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getInventario', id_token: id_token })
+                });
+                const result = await response.json();
+                if (result.status === 'error') { throw new Error(result.message); }
+                investimentos = result;
+                atualizarTela();
+            } catch (e) {
+                alert("Erro ao carregar dados: " + e.message);
+                logout();
+            }
+        }
+        
+        function atualizarTela() {
+            const totais = { luciano: 0, marcio: 0, kenedy: 0 };
+            (investimentos || []).forEach(item => {
+                const socio = item.Socio ? item.Socio.toLowerCase() : '';
+                if (totais[socio] !== undefined) { totais[socio] += parseFloat(item.Valor) || 0; }
+            });
+            document.getElementById('total-luciano').textContent = formatarMoeda(totais.luciano);
+            document.getElementById('total-marcio').textContent = formatarMoeda(totais.marcio);
+            document.getElementById('total-kenedy').textContent = formatarMoeda(totais.kenedy);
+        }
+
+        function abrirFormularioAdicionar() {
+            const form = document.getElementById('form-add-inventory');
+            form.innerHTML = '<div class="form-group"><label>Sócio:</label><select id="inv-socio"><option value="Luciano">Luciano</option><option value="Marcio">Márcio</option><option value="Kenedy">Kenedy</option></select></div><div class="form-group"><label>Descrição:</label><input id="inv-desc" type="text" required></div><div class="form-group"><label>Valor (R$):</label><input id="inv-valor" type="number" step="0.01" required></div><button type="submit" class="btn-submit">Salvar</button>';
+            document.getElementById('modal-add-inventory').showModal();
+        }
+
+        async function handleInventoryFormSubmit(e) {
+            e.preventDefault();
+            const data = {
+                Data: new Date().toLocaleDateString("pt-BR"),
+                Socio: document.getElementById('inv-socio').value,
+                Descricao: document.getElementById('inv-desc').value,
+                Valor: parseFloat(document.getElementById('inv-valor').value)
+            };
+            if (!data.Descricao || !data.Valor || data.Valor <= 0) { alert("Preencha todos os campos."); return; }
+            showLoading('Salvando...');
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'addInventario', id_token: id_token, data: data })
+                });
+                await carregarDados();
+                document.getElementById('modal-add-inventory').close();
+            } catch (e) {
+                alert("Erro ao salvar: " + e.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function abrirVisualizacaoInventario() {
+            const body = document.getElementById('inventory-body');
+            body.innerHTML = '';
+            const porSocio = {};
+            (investimentos || []).forEach(i => { (porSocio[i.Socio] = porSocio[i.Socio] || []).push(i); });
+            for (const socio in porSocio) {
+                if (porSocio[socio].length > 0) {
+                    let html = `<h3>${socio}</h3><table>`;
+                    porSocio[socio].forEach(item => { html += `<tr><td>${item.Descricao}</td><td>${formatarMoeda(item.Valor)}</td></tr>`; });
+                    body.innerHTML += html + '</table>';
+                }
+            }
+            // --- CORREÇÃO: ADICIONADA A LINHA QUE MOSTRA O MODAL ---
+            document.getElementById('modal-view-inventory').showModal();
+        }
+        
+        function abrirModalReceitas() {
+            // Reativando a funcionalidade de receitas
+            document.getElementById('recipes-body').innerHTML = '<h2>Em Breve</h2><p>A seção de receitas está em desenvolvimento.</p>';
+            document.getElementById('modal-view-recipes').showModal();
+        }
+
+        async function inicializarAplicacao() {
+            await carregarDados();
+            hideLoading();
+            document.getElementById('tela-principal').style.display = 'block';
+            
+            document.getElementById('btn-logout').addEventListener('click', logout);
+            document.getElementById('btn-add-inventory').addEventListener('click', abrirFormularioAdicionar);
+            document.getElementById('btn-view-inventory').addEventListener('click', abrirVisualizacaoInventario);
+            document.getElementById('btn-view-recipes').addEventListener('click', abrirModalReceitas);
+            document.getElementById('form-add-inventory').addEventListener('submit', handleInventoryFormSubmit);
+            document.querySelectorAll('.btn-close').forEach(btn => btn.addEventListener('click', () => btn.closest('dialog').close()));
+        }
+
         document.getElementById('logo-login').src = LOGO_URL;
         document.getElementById('logo-principal').src = LOGO_URL;
     </script>
