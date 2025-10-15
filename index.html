@@ -44,7 +44,7 @@
             <h1>PrimÓrdios Cervejaria</h1>
             <p>Por favor, faça login para acessar o sistema.</p>
             <div id="g_id_onload"
-                 data-client_id="COLE_SEU_ID_DO_CLIENTE_AQUI"
+                 data-client_id="998271439077-uiffl3sk3b7vj6ass495rbmbc41di46n.apps.googleusercontent.com"
                  data-callback="handleCredentialResponse"
                  data-cancel_on_tap_outside="false">
             </div>
@@ -78,14 +78,12 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const SCRIPT_URL = "COLE_SEU_URL_DO_APPS_SCRIPT_AQUI";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrKN7Tr_cu5X-dzKzKfgdeuYxg9kLerQMN50r_bbj0b6SVayDBd2uxX2MW7N2-epGqeg/exec";
         const LOGO_URL = "https://github.com/CervejariaPrimOrdioS/cervejaria-sistema/blob/main/logo.jpeg?raw=true";
         let id_token = null;
 
         // --- LÓGICA DE LOGIN (CORRIGIDA E ROBUSTA) ---
         function handleCredentialResponse(response) {
-            alert("DIAGNÓSTICO 1: O login com Google funcionou e a função de callback foi chamada."); // Alerta temporário
-
             id_token = response.credential;
             const userPayload = JSON.parse(atob(id_token.split('.')[1]));
             document.getElementById('user-email').textContent = userPayload.email;
@@ -93,7 +91,6 @@
             document.getElementById('tela-login').style.display = 'none';
             showLoading('Autenticando e carregando dados...');
             
-            alert("DIAGNÓSTICO 2: O token foi processado. Iniciando a aplicação agora."); // Alerta temporário
             inicializarAplicacao();
         }
 
