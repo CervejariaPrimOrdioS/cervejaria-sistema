@@ -9,35 +9,19 @@
     <style>
         body { font-family: 'Roboto', sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { max-width: 600px; width: 100%; margin: 20px; background-color: #1e1e1e; border: 1px solid #444; padding: 30px; border-radius: 8px; text-align: center; }
-        
-        /* --- 1. ESTILO DO LOGO --- */
-        .logo-container img {
-            max-width: 150px; /* Você pode ajustar o tamanho aqui se precisar */
-            margin-bottom: 20px;
-        }
-
+        .logo-container img { max-width: 150px; margin-bottom: 20px; }
         h1 { margin-top: 0; }
         table { width: 100%; border-collapse: collapse; margin: 25px 0; text-align: left; }
         th, td { border: 1px solid #444; padding: 12px; }
         th { background-color: #2a2a2a; }
         td.valor { font-weight: bold; font-size: 1.1em; color: #5dade2; }
-        
-        button { 
-            width: 100%; padding: 12px; font-size: 1em; font-weight: bold; border-radius: 4px; 
-            border: 1px solid; cursor: pointer; margin-top: 10px; 
-            transition: background-color 0.3s ease, border-color 0.3s ease; /* --- 3. EFEITO DE TRANSIÇÃO SUAVE --- */
-        }
-
-        /* --- 2. NOVA PALETA DE CORES E EFEITOS HOVER --- */
+        button { width: 100%; padding: 12px; font-size: 1em; font-weight: bold; border-radius: 4px; border: 1px solid; cursor: pointer; margin-top: 10px; transition: background-color 0.3s ease, border-color 0.3s ease; }
         .btn-submit, #btn-add-inventory { background-color: #27ae60; color: #FFFFFF; border-color: #27ae60; }
         .btn-submit:hover, #btn-add-inventory:hover { background-color: #2ecc71; border-color: #2ecc71; }
-
-        #btn-view-inventory { background-color: #d39c43; color: #FFFFFF; border-color: #d39c43; } /* Dourado/Âmbar */
+        #btn-view-inventory { background-color: #d39c43; color: #FFFFFF; border-color: #d39c43; }
         #btn-view-inventory:hover { background-color: #e6b976; border-color: #e6b976; }
-
-        #btn-logout { background-color: #c0392b; color: #FFFFFF; border-color: #c0392b; } /* Vermelho para Sair */
+        #btn-logout { background-color: #c0392b; color: #FFFFFF; border-color: #c0392b; }
         #btn-logout:hover { background-color: #e74c3c; border-color: #e74c3c; }
-
         #tela-principal { display: none; }
         #tela-login { text-align: center; }
         .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 9999; color: white; font-size: 1.5em; }
@@ -55,12 +39,12 @@
     <div class="container">
         <div id="tela-login">
             <div class="logo-container">
-                <img src="https://github.com/CervejariaPrimOrdioS/cervejaria-sistema/blob/main/logo.jpeg?raw=true" alt="Logo da PrimÓrdios Cervejaria"> 
+                <img id="logo-login" src="" alt="Logo da PrimÓrdios Cervejaria"> 
             </div>
             <h1>PrimÓrdios Cervejaria</h1>
             <p>Por favor, faça login para acessar o sistema.</p>
             <div id="g_id_onload"
-                 data-client_id="998271439077-uiffl3sk3b7vj6ass495rbmbc41di46n.apps.googleusercontent.com"
+                 data-client_id="COLE_SEU_ID_DO_CLIENTE_AQUI"
                  data-callback="handleCredentialResponse"
                  data-cancel_on_tap_outside="false">
             </div>
@@ -69,7 +53,7 @@
 
         <div id="tela-principal">
             <div class="logo-container">
-                <img src="https://github.com/CervejariaPrimOrdioS/cervejaria-sistema/blob/main/logo.jpeg?raw=true" alt="Logo da PrimÓrdios Cervejaria">
+                <img id="logo-principal" src="" alt="Logo da PrimÓrdios Cervejaria">
             </div>
             <h1>Painel de Controle</h1>
             <p style="text-align: center;">Logado como: <strong id="user-email"></strong></p>
@@ -90,4 +74,35 @@
     <div id="loading-overlay" class="loading-overlay">Carregando...</div>
 
     <dialog id="modal-add-inventory"><div class="modal-header"><h2>Adicionar Item</h2><button class="btn-close">&times;</button></div><div class="modal-body"><form id="form-add-inventory"></form></div></dialog>
-    <dialog id="modal-view-inventory"><div class="modal-header"><h2>Inventário Detalhado</h2><button class="btn-close">&times;</button
+    <dialog id="modal-view-inventory"><div class="modal-header"><h2>Inventário Detalhado</h2><button class="btn-close">&times;</button></div><div class="modal-body" id="inventory-body"></div></dialog>
+
+    <script>
+        // --- CONFIGURAÇÃO ---
+        const SCRIPT_URL = "COLE_SEU_URL_DO_APPS_SCRIPT_AQUI";
+        const LOGO_URL = "https://github.com/CervejariaPrimOrdioS/cervejaria-sistema/blob/main/logo.jpeg?raw=true";
+        let id_token = null;
+
+        // --- LÓGICA DE LOGIN (CORRIGIDA E ROBUSTA) ---
+        function handleCredentialResponse(response) {
+            alert("DIAGNÓSTICO 1: O login com Google funcionou e a função de callback foi chamada."); // Alerta temporário
+
+            id_token = response.credential;
+            const userPayload = JSON.parse(atob(id_token.split('.')[1]));
+            document.getElementById('user-email').textContent = userPayload.email;
+            
+            document.getElementById('tela-login').style.display = 'none';
+            showLoading('Autenticando e carregando dados...');
+            
+            alert("DIAGNÓSTICO 2: O token foi processado. Iniciando a aplicação agora."); // Alerta temporário
+            inicializarAplicacao();
+        }
+
+        // --- Resto do JavaScript (sem alterações na lógica principal) ---
+        function logout(){id_token=null;google.accounts.id.disableAutoSelect();document.getElementById("tela-principal").style.display="none";document.querySelectorAll("dialog").forEach(d=>d.close());document.getElementById("tela-login").style.display="block"}let investimentos=[];function formatarMoeda(e){return(e||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}function showLoading(e){document.getElementById("loading-overlay").textContent=e,document.getElementById("loading-overlay").style.display="flex"}function hideLoading(){document.getElementById("loading-overlay").style.display="none"}async function carregarDados(){if(!id_token)return void alert("Não autenticado!");try{const e=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({action:"getInventario",id_token:id_token})}),o=await e.json();if("error"===o.status)throw new Error(o.message);investimentos=o,atualizarTela()}catch(e){alert("Erro ao carregar dados: "+e.message),logout()}}function atualizarTela(){const e={luciano:0,marcio:0,kenedy:0};(investimentos||[]).forEach(o=>{const t=o.Socio?o.Socio.toLowerCase():"";void 0!==e[t]&&(e[t]+=parseFloat(o.Valor)||0)}),document.getElementById("total-luciano").textContent=formatarMoeda(e.luciano),document.getElementById("total-marcio").textContent=formatarMoeda(e.marcio),document.getElementById("total-kenedy").textContent=formatarMoeda(e.kenedy)}function abrirFormularioAdicionar(){const e=document.getElementById("form-add-inventory");e.innerHTML='<div class="form-group"><label>Sócio:</label><select id="inv-socio"><option value="Luciano">Luciano</option><option value="Marcio">Márcio</option><option value="Kenedy">Kenedy</option></select></div><div class="form-group"><label>Descrição:</label><input id="inv-desc" type="text" required></div><div class="form-group"><label>Valor (R$):</label><input id="inv-valor" type="number" step="0.01" required></div><button type="submit" class="btn-submit">Salvar</button>',document.getElementById("modal-add-inventory").showModal()}async function handleInventoryFormSubmit(e){e.preventDefault();const o={Data:(new Date).toLocaleDateString("pt-BR"),Socio:document.getElementById("inv-socio").value,Descricao:document.getElementById("inv-desc").value,Valor:parseFloat(document.getElementById("inv-valor").value)};if(o.Descricao&&o.Valor&&o.Valor>0){showLoading("Salvando...");try{await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({action:"addInventario",id_token:id_token,data:o})}),await carregarDados(),document.getElementById("modal-add-inventory").close()}catch(e){alert("Erro ao salvar: "+e.message)}finally{hideLoading()}}else alert("Preencha todos os campos.")}function abrirVisualizacaoInventario(){const e=document.getElementById("inventory-body");e.innerHTML="";const o={};investimentos.forEach(t=>{(o[t.Socio]=o[t.Socio]||[]).push(t)});for(const t in o)if(o[t].length>0){let n=`<h3>${t}</h3><table>`;o[t].forEach(e=>{n+=`<tr><td>${e.Descricao}</td><td>${formatarMoeda(e.Valor)}</td></tr>`}),e.innerHTML+=n+"</table>"}}async function inicializarAplicacao(){await carregarDados(),hideLoading(),document.getElementById("tela-principal").style.display="block",document.getElementById("btn-logout").addEventListener("click",logout),document.getElementById("btn-add-inventory").addEventListener("click",abrirFormularioAdicionar),document.getElementById("btn-view-inventory").addEventListener("click",abrirVisualizacaoInventario),document.getElementById("form-add-inventory").addEventListener("submit",handleInventoryFormSubmit),document.querySelectorAll(".btn-close").forEach(e=>e.addEventListener("click",()=>e.closest("dialog").close()))}
+
+        // --- INICIALIZAÇÃO VISUAL (SEPARADA E SEGURA) ---
+        document.getElementById('logo-login').src = LOGO_URL;
+        document.getElementById('logo-principal').src = LOGO_URL;
+    </script>
+</body>
+</html>
