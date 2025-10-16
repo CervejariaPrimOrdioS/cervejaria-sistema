@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - PrimÓrdios Cervejaria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=3.0">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <div id="tela-login">
+            <div class="logo-container"><img id="logo-login" src="" alt="Logo"></div>
+            <h1>PrimÓrdios Cervejaria</h1>
+            <p>Bem-vindo ao painel de controle. Por favor, faça login para continuar.</p>
+            <div id="g_id_onload"
+                 data-client_id="998271439077-uiffl3sk3b7vj6ass495rbmbc41di46n.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-cancel_on_tap_outside="false">
+            </div>
+            <div class="g_id_signin" data-type="standard" data-theme="filled_blue" data-size="large" data-text="continue_with"></div>
+        </div>
+        <div id="tela-principal">
+            <img id="profile-pic" class="profile-pic" src="" alt="Foto de Perfil">
+            <h1>Painel de Controle</h1>
+            <p>Logado como: <strong id="user-email"></strong></p>
+            <table>
+                <thead><tr><th>Sócio</th><th>Valor Investido</th></tr></thead>
+                <tbody>
+                    <tr><td>Luciano</td><td id="total-luciano" class="valor">R$ 0,00</td></tr>
+                    <tr><td>Márcio</td><td id="total-marcio" class="valor">R$ 0,00</td></tr>
+                    <tr><td>Kenedy</td><td id="total-kenedy" class="valor">R$ 0,00</td></tr>
+                </tbody>
+            </table>
+            <button id="btn-add-inventory">Adicionar Item ao Inventário</button>
+            <button id="btn-view-inventory">Visualizar Inventário Detalhado</button>
+            <button id="btn-logout">Sair (Logout)</button>
+        </div>
+    </div>
+    <div id="loading-overlay" class="loading-overlay">Carregando...</div>
+    <dialog id="modal-add-inventory"><div class="modal-header"><h2>Adicionar Item</h2><button class="btn-close">&times;</button></div><div class="modal-body"><form id="form-add-inventory"></form></div></dialog>
+    <dialog id="modal-view-inventory"><div class="modal-header"><h2>Inventário</h2><button class="btn-close">&times;</button></div><div class="modal-body" id="inventory-body"></div></dialog>
+    <script src="script.js?v=3.0"></script>
+</body>
+</html>
